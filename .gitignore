@@ -1,0 +1,33 @@
+## .NET
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+*.user
+*.suo
+*.vs/
+.vscode/
+*.nupkg
+
+## Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+build/
+publish/
+
+## IDE
+.idea/
+*.sln.docstates
+*.swp
+*~
+
+## OS
+.DS_Store
+Thumbs.db
+
+## MSFS
+Packages/
+_PackageInt/
