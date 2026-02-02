@@ -1,16 +1,6 @@
-## .NET
-bin/
-obj/
-*.dll
-*.exe
-*.pdb
-*.user
-*.suo
-*.vs/
-.vscode/
-*.nupkg
-
-## Build results
+## .NET build output
+[Bb]in/
+[Oo]bj/
 [Dd]ebug/
 [Rr]elease/
 x64/
@@ -18,8 +8,17 @@ x86/
 build/
 publish/
 
-## IDE
+## NuGet
+*.nupkg
+*.snupkg
+**/packages/
+
+## IDE / editor
+.vs/
+.vscode/
 .idea/
+*.user
+*.suo
 *.sln.docstates
 *.swp
 *~
