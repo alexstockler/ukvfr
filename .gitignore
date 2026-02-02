@@ -23,6 +23,13 @@ publish/
 *.swp
 *~
 
+## Secrets / user-specific config overrides
+appsettings.*.json
+!appsettings.json
+
+## Whisper models (large binary files)
+models/
+
 ## OS
 .DS_Store
 Thumbs.db
