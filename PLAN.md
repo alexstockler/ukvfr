@@ -206,25 +206,75 @@ Static data files (JSON) defining UK aviation infrastructure.
 - OpenAIP (open-source aviation data)
 - Community-maintained databases
 
-#### 3.6 Voice Module
+#### 3.6 Voice Module (AI-Powered)
 
-**Text-to-Speech (ATC output):**
-- System.Speech.Synthesis (built-in, basic quality) for MVP
-- Azure Cognitive Services Speech SDK for higher quality (multiple voice profiles for different controllers)
-- Apply audio processing: slight compression, band-pass filter (300Hz–3.4kHz) to simulate radio effect
-- Different voice profiles per unit type (tower vs radar vs ATIS)
+Voice interaction is a **core feature from Phase 1**, not a later add-on. The architecture uses provider interfaces so implementations can be swapped via configuration.
 
-**Speech Recognition (pilot input) — optional/phase 2:**
-- Azure Speech SDK or Whisper (local) for transcription
-- Intent parser to map spoken phrases to structured commands
-- Fallback: clickable menu system (like the default MSFS ATC) for MVP
+**Speech-to-Text (pilot mic input):**
+
+| Provider | Type | Notes |
+|----------|------|-------|
+| **Whisper.net** (primary) | Local | OpenAI Whisper model running on-device via GGML. Zero cost, no internet, low latency. |
+| OpenAI Whisper API | Cloud fallback | Higher accuracy for noisy environments. Requires API key. |
+
+**Intent Parsing (understanding pilot speech):**
+
+Transcribed speech must be converted to structured commands the ATC engine can process. A hybrid approach handles both standard and non-standard phraseology:
+
+| Layer | When Used | Example |
+|-------|-----------|---------|
+| **Rule-based patterns** (primary) | Standard CAP 413 phrases | "Request joining instructions" → `JoinRequest` intent |
+| **OpenAI GPT** (fallback) | Ambiguous or non-standard input | "Uh, I'd like to come in and land please" → `JoinRequest` intent |
+
+The rule-based layer is fast (sub-millisecond) and handles the majority of well-formed radio calls. The LLM fallback provides graceful handling of natural speech variation, student-pilot phrasing, and partial transmissions.
+
+**Text-to-Speech (ATC voice output):**
+
+| Provider | Type | Notes |
+|----------|------|-------|
+| **ElevenLabs** (primary) | Cloud (streaming) | Low-latency streaming API. Distinct voice per unit type (Tower, Radar, ATIS). Natural-sounding. |
+| OpenAI TTS | Cloud fallback | Alternative cloud TTS. |
+| System.Speech | Local fallback | Free, offline, zero-config. Robotic but functional when no API keys configured. |
+
+**Radio audio filter (always local):**
+- NAudio-based audio processing pipeline
+- Band-pass filter (300Hz–3.4kHz) simulating VHF radio
+- Slight compression and noise floor
+- Applied to all TTS output regardless of provider
+
+**Voice profiles:**
+- Different ElevenLabs voice IDs per unit type (Tower = crisp, Radar = measured, ATIS = monotone)
+- Configurable per-aerodrome if desired
+- SSML-like pacing control for readbacks and number sequences
+
+**Provider interfaces:**
+```csharp
+public interface ITtsProvider
+{
+    Task<Stream> SynthesiseAsync(string text, VoiceProfile profile, CancellationToken ct);
+}
+
+public interface ISttProvider
+{
+    Task<TranscriptionResult> TranscribeAsync(Stream audioStream, CancellationToken ct);
+}
+
+public interface IIntentParser
+{
+    Task<PilotIntent> ParseAsync(string transcript, ConversationContext context, CancellationToken ct);
+}
+```
+
+**Configuration:** Provider selection via `appsettings.json`. Missing API keys automatically fall back to local providers (Whisper.net for STT, System.Speech for TTS, rule-based for intent parsing). The app works fully offline with reduced quality.
+
+**Fallback: menu-driven input** remains available alongside voice for testing and for users without microphones.
 
 ---
 
 ### 4. Development Phases
 
 #### Phase 1: Foundation (MVP)
-**Goal:** Basic working ATC at a single UK aerodrome with menu-driven pilot input.
+**Goal:** Basic working ATC at a single UK aerodrome with AI-powered voice interaction.
 
 | Task | Description |
 |------|-------------|
@@ -235,11 +285,13 @@ Static data files (JSON) defining UK aviation infrastructure.
 | Basic ATC state machine | Handle: initial call → pass message → service provision → frequency change |
 | Phraseology engine v1 | Template-based CAP 413 message generation for core interactions |
 | Circuit management | Detect overhead join, issue joining instructions, sequence one aircraft in the circuit |
-| Menu-driven input | Clickable options for pilot responses (initial call, readback, request service, etc.) |
-| Basic TTS | System.Speech for ATC voice output with radio filter |
+| Voice input (STT) | Whisper.net local speech-to-text for pilot transmissions |
+| Intent parsing | Rule-based CAP 413 pattern matching + OpenAI GPT fallback for ambiguous input |
+| Voice output (TTS) | ElevenLabs streaming TTS with radio band-pass filter (NAudio), System.Speech offline fallback |
+| Menu-driven fallback | Clickable options as alternative to voice (testing, no-mic scenarios) |
 | ATIS generation | Auto-generate ATIS from sim weather data in UK format |
 
-**Deliverable:** A pilot can fly a VFR circuit at Farnborough, interact with Tower via menus, and hear correctly phrased UK ATC responses.
+**Deliverable:** A pilot can fly a VFR circuit at Farnborough, speak to Tower using their microphone, and hear correctly phrased UK ATC responses through realistic radio-filtered voice output.
 
 #### Phase 2: Expanded Coverage
 **Goal:** Support multiple aerodromes, en-route services, and realistic transitions.
@@ -252,19 +304,17 @@ Static data files (JSON) defining UK aviation infrastructure.
 | Frequency handoff | Proper handoff between units as pilot transits |
 | Traffic information | Generate realistic traffic calls ("traffic, 2 o'clock, 3 miles, crossing left to right, indicating 200 feet below") |
 | Multiple join types | Overhead, downwind, crosswind, base leg, straight-in approaches |
-| Improved TTS | Azure Speech with multiple controller voice profiles |
+| Voice profile library | Distinct ElevenLabs voices per aerodrome/unit, regional accent variation |
 | Airfield variations | Handle Radio-only (air/ground), Information (FISO), Tower, Approach, Radar units |
-| Settings UI | Configuration panel for voice volume, speech rate, realism options |
+| Settings UI | Configuration panel for voice volume, speech rate, provider selection, API keys, realism options |
 
 **Deliverable:** A pilot can fly a cross-country VFR flight across southern England, transitioning between LARS units, and arriving via overhead join at a different aerodrome.
 
 #### Phase 3: Advanced Features
-**Goal:** Speech recognition, AI traffic, and comprehensive UK coverage.
+**Goal:** AI traffic, comprehensive UK coverage, and advanced voice features.
 
 | Task | Description |
 |------|-------------|
-| Speech recognition | Voice input using Azure Speech or local Whisper model |
-| Intent parsing | NLP to extract pilot intentions from spoken phrases |
 | AI traffic injection | Create and manage AI VFR traffic in circuits and en-route via SimConnect |
 | Traffic sequencing | Sequence multiple aircraft (player + AI) in circuits |
 | Full UK coverage | Complete aerodrome database, all LARS units, all controlled airspace |
@@ -273,8 +323,9 @@ Static data files (JSON) defining UK aviation infrastructure.
 | MATZ penetration | Military ATZ procedures and crossing clearances |
 | In-sim panel | Optional HTML/JS radio panel installed to Community folder |
 | Scenario system | Pre-built training scenarios (first solo, cross-country nav, busy circuit) |
+| Advanced voice | Noise-cancellation preprocessing, confidence scoring, partial transmission handling |
 
-**Deliverable:** Full UK VFR ATC experience with voice interaction, AI traffic, and nationwide coverage.
+**Deliverable:** Full UK VFR ATC experience with AI traffic and nationwide coverage.
 
 ---
 
@@ -299,10 +350,14 @@ Static data files (JSON) defining UK aviation infrastructure.
 |----------|--------|-----------|
 | Runtime | .NET 8 (C#) | Best SimConnect support, good TTS ecosystem, strong typing |
 | Process model | Out-of-process (external .exe) | Stability, easier debugging, no WASM complexity |
-| Pilot input (MVP) | Menu-driven | Reliable, no speech recognition dependency |
-| Pilot input (later) | Speech recognition | More immersive, but requires tuning |
-| ATC voice (MVP) | System.Speech.Synthesis | Free, zero-config, good enough for MVP |
-| ATC voice (later) | Azure Cognitive Services | Multiple voices, better quality, small cost |
+| STT (primary) | Whisper.net (local) | Zero cost, no internet, low latency. GGML runtime. |
+| STT (fallback) | OpenAI Whisper API | Cloud option for noisy environments |
+| Intent parsing (primary) | Rule-based pattern matching | Sub-millisecond, handles standard CAP 413 phraseology |
+| Intent parsing (fallback) | OpenAI GPT | Handles ambiguous/non-standard pilot speech gracefully |
+| TTS (primary) | ElevenLabs streaming API | Natural voices, distinct profiles per unit type, low-latency streaming |
+| TTS (fallback) | System.Speech.Synthesis | Free, offline, zero-config when no API key available |
+| Radio filter | NAudio (local) | Band-pass 300Hz–3.4kHz, compression, noise floor. Always applied locally. |
+| Pilot input (fallback) | Menu-driven | Available alongside voice for testing and no-mic scenarios |
 | Data format | JSON files | Human-readable, easy to edit, community-contributable |
 | In-sim UI | Optional WebSocket panel | Non-essential; the add-on works without any Community folder install |
 | AI traffic | Phase 3 | Significant complexity; core ATC works without it |
@@ -337,10 +392,23 @@ ukvfr/
 │   │   │   ├── FlightPhaseDetector.cs
 │   │   │   ├── CircuitLegDetector.cs
 │   │   │   └── ProximityCalculator.cs
-│   │   └── Voice/                   # TTS and speech recognition
-│   │       ├── TextToSpeechService.cs
-│   │       ├── RadioAudioFilter.cs
-│   │       └── SpeechRecognitionService.cs
+│   │   └── Voice/                   # AI-powered voice pipeline
+│   │       ├── ITtsProvider.cs       # TTS provider interface
+│   │       ├── ISttProvider.cs       # STT provider interface
+│   │       ├── IIntentParser.cs      # Intent parsing interface
+│   │       ├── VoiceProfile.cs       # Voice identity (unit type, ElevenLabs voice ID)
+│   │       ├── PilotIntent.cs        # Structured intent from parsed speech
+│   │       ├── TranscriptionResult.cs
+│   │       ├── Providers/
+│   │       │   ├── WhisperSttProvider.cs      # Whisper.net local STT
+│   │       │   ├── OpenAiSttProvider.cs       # OpenAI Whisper API fallback
+│   │       │   ├── ElevenLabsTtsProvider.cs   # ElevenLabs streaming TTS
+│   │       │   ├── OpenAiTtsProvider.cs       # OpenAI TTS fallback
+│   │       │   ├── SystemSpeechTtsProvider.cs # System.Speech offline fallback
+│   │       │   ├── RuleBasedIntentParser.cs   # Pattern-matching intent parser
+│   │       │   └── OpenAiIntentParser.cs      # GPT fallback intent parser
+│   │       ├── RadioAudioFilter.cs   # NAudio band-pass filter (300Hz–3.4kHz)
+│   │       └── VoicePipeline.cs      # Orchestrates STT → intent → ATC → TTS flow
 │   ├── UkVfr.App/                   # Desktop application (WPF or Avalonia)
 │   │   ├── MainWindow.xaml
 │   │   ├── ViewModels/
@@ -392,12 +460,15 @@ ukvfr/
    - Visual Studio 2022 or JetBrains Rider
    - .NET 8 SDK
    - MSFS 2020 + MSFS SDK (for SimConnect DLLs)
+   - (Optional) ElevenLabs API key, OpenAI API key
 2. **Create solution and projects** per the structure above
 3. **Add SimConnect reference** (`Microsoft.FlightSimulator.SimConnect` DLL from the SDK, or use the FsConnect NuGet package)
 4. **Implement SimConnect bridge** — confirm you can read aircraft position and COM frequencies
-5. **Build aircraft state tracker** — log flight phase transitions
-6. **Build phraseology engine** — generate sample ATC messages and verify against CAP 413
-7. **Build ATC state machine** — handle a single aerodrome interaction end-to-end
-8. **Add TTS output** — hear ATC responses through speakers
-9. **Add menu-driven pilot input** — clickable options in the app window
-10. **Test a full circuit** at one aerodrome
+5. **Build domain models** — aerodrome, airspace, runway, aircraft state types
+6. **Build aircraft state tracker** — log flight phase transitions
+7. **Build voice interfaces** — `ITtsProvider`, `ISttProvider`, `IIntentParser` with provider implementations
+8. **Build phraseology engine** — generate sample ATC messages and verify against CAP 413
+9. **Build ATC state machine** — handle a single aerodrome interaction end-to-end
+10. **Wire voice pipeline** — STT → intent parsing → ATC engine → phraseology → TTS → radio filter
+11. **Add menu-driven fallback** — clickable options as alternative to voice
+12. **Test a full circuit** at one aerodrome with voice interaction

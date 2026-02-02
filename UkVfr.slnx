@@ -3,4 +3,7 @@
     <Project Path="src/UkVfr.App/UkVfr.App.csproj" />
     <Project Path="src/UkVfr.Core/UkVfr.Core.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/UkVfr.Core.Tests/UkVfr.Core.Tests.csproj" />
+  </Folder>
 </Solution>

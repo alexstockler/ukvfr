@@ -5,25 +5,120 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:UkVfr.App"
         mc:Ignorable="d"
-        Title="UK VFR ATC – Live Sim Data" Height="300" Width="600">
-    <Grid Margin="16">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
+        Title="UK VFR ATC" Height="700" Width="900"
+        Background="#1E1E2E">
+    <Grid Margin="12">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="280" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
-        <TextBlock Text="Live SimConnect Data (read‑only MVP)"
-                   FontSize="18"
-                   FontWeight="Bold"
-                   Margin="0,0,0,12" />
+        <!-- Left panel: Sim data + Pilot menu -->
+        <Border Grid.Column="0" Background="#2B2B3D" CornerRadius="8" Padding="12" Margin="0,0,6,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
 
-        <TextBox x:Name="StateTextBox"
-                 Grid.Row="1"
-                 FontFamily="Consolas"
-                 FontSize="14"
-                 IsReadOnly="True"
-                 TextWrapping="Wrap"
-                 VerticalScrollBarVisibility="Auto"
-                 HorizontalScrollBarVisibility="Auto" />
+                <!-- Sim status -->
+                <TextBlock Grid.Row="0" Text="Aircraft State"
+                           Foreground="#CDD6F4" FontSize="14" FontWeight="SemiBold"
+                           Margin="0,0,0,8" />
+                <TextBox x:Name="StateTextBox" Grid.Row="1"
+                         FontFamily="Consolas" FontSize="11"
+                         Foreground="#A6ADC8" Background="Transparent"
+                         BorderThickness="0" IsReadOnly="True"
+                         TextWrapping="Wrap" Height="140" />
+
+                <!-- Provider status -->
+                <TextBlock Grid.Row="2" x:Name="ProviderStatusText"
+                           Foreground="#6C7086" FontSize="10"
+                           TextWrapping="Wrap" Margin="0,8,0,8" />
+
+                <!-- Pilot menu (fallback input) -->
+                <Border Grid.Row="3" Background="#313244" CornerRadius="6" Padding="8" Margin="0,4,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Pilot Menu" Foreground="#CDD6F4"
+                                   FontSize="13" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <Button x:Name="BtnInitialCall" Content="Initial Call"
+                                Click="OnMenuInitialCall" Style="{StaticResource MenuBtn}" />
+                        <Button x:Name="BtnPassMessage" Content="Pass Message"
+                                Click="OnMenuPassMessage" Style="{StaticResource MenuBtn}" />
+                        <Button x:Name="BtnRequestJoin" Content="Request Join"
+                                Click="OnMenuRequestJoin" Style="{StaticResource MenuBtn}" />
+                        <Button x:Name="BtnPositionDownwind" Content="Report: Downwind"
+                                Click="OnMenuDownwind" Style="{StaticResource MenuBtn}" />
+                        <Button x:Name="BtnPositionFinal" Content="Report: Final"
+                                Click="OnMenuFinal" Style="{StaticResource MenuBtn}" />
+                        <Button x:Name="BtnReadback" Content="Readback"
+                                Click="OnMenuReadback" Style="{StaticResource MenuBtn}" />
+                        <Button x:Name="BtnRoger" Content="Roger"
+                                Click="OnMenuRoger" Style="{StaticResource MenuBtn}" />
+                        <Button x:Name="BtnFreqChange" Content="Request Freq Change"
+                                Click="OnMenuFreqChange" Style="{StaticResource MenuBtn}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Right panel: ATC transcript -->
+        <Border Grid.Column="1" Background="#2B2B3D" CornerRadius="8" Padding="12" Margin="6,0,0,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="ATC Transcript"
+                           Foreground="#CDD6F4" FontSize="14" FontWeight="SemiBold"
+                           Margin="0,0,0,8" />
+
+                <ListBox x:Name="TranscriptList" Grid.Row="1"
+                         Background="Transparent" BorderThickness="0"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
+
+                <!-- Status bar -->
+                <Border Grid.Row="2" Background="#313244" CornerRadius="4" Padding="8,4" Margin="0,8,0,0">
+                    <TextBlock x:Name="StatusText"
+                               Foreground="#6C7086" FontSize="11"
+                               Text="Disconnected — waiting for SimConnect" />
+                </Border>
+            </Grid>
+        </Border>
     </Grid>
+
+    <Window.Resources>
+        <Style x:Key="MenuBtn" TargetType="Button">
+            <Setter Property="Background" Value="#45475A" />
+            <Setter Property="Foreground" Value="#CDD6F4" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="Margin" Value="0,2" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#585B70" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#6C7086" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
 </Window>
