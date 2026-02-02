@@ -4,6 +4,12 @@
     <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Whisper.net" Version="1.7.3" />
+    <PackageReference Include="Whisper.net.Runtime" Version="1.7.3" />
+    <PackageReference Include="NAudio" Version="2.2.1" />
+  </ItemGroup>
+
   <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-x64' Or '$(OS)' == 'Windows_NT'">
     <PackageReference Include="System.Speech" Version="8.0.0" />
   </ItemGroup>

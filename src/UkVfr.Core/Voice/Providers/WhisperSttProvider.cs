@@ -1,20 +1,22 @@
+using NAudio.Wave;
+using Whisper.net;
+
 namespace UkVfr.Core.Voice.Providers;
 
 /// <summary>
 /// Local speech-to-text using Whisper.net (GGML runtime).
 /// Runs OpenAI's Whisper model on-device for zero-cost, low-latency transcription.
 ///
-/// Requires the Whisper.net NuGet package and a GGML model file (e.g. ggml-base.en.bin).
-/// The model file path is configurable.
-///
-/// NOTE: Full implementation depends on Whisper.net package being installed.
-/// This implementation provides the integration contract and will be wired up
-/// when the package dependency is added.
+/// Requires a GGML model file (e.g. ggml-base.en.bin) downloaded separately.
+/// Download from: https://huggingface.co/ggerganov/whisper.cpp/tree/main
+/// Recommended for MVP: ggml-base.en.bin (~148 MB, English-only, fast)
 /// </summary>
-public sealed class WhisperSttProvider : ISttProvider
+public sealed class WhisperSttProvider : ISttProvider, IDisposable
 {
     private readonly string _modelPath;
-    private bool _modelLoaded;
+    private WhisperFactory? _factory;
+    private WhisperProcessor? _processor;
+    private bool _initialised;
 
     public WhisperSttProvider(string modelPath)
     {
@@ -36,44 +38,128 @@ public sealed class WhisperSttProvider : ISttProvider
             };
         }
 
-        // TODO: Wire up Whisper.net when package is added.
-        // The implementation will:
-        // 1. Load the GGML model on first call (_modelLoaded flag)
-        // 2. Convert the input audio stream to 16kHz mono PCM (Whisper requirement)
-        // 3. Run inference using WhisperProcessor
-        // 4. Return the transcribed text with confidence score
-        //
-        // Approximate implementation shape:
-        //
-        // if (!_modelLoaded)
-        // {
-        //     _factory = WhisperFactory.FromPath(_modelPath);
-        //     _processor = _factory.CreateBuilder()
-        //         .WithLanguage("en")
-        //         .Build();
-        //     _modelLoaded = true;
-        // }
-        //
-        // var samples = ConvertToFloat32Pcm16kHz(audioStream);
-        // var segments = new List<string>();
-        // await foreach (var segment in _processor.ProcessAsync(samples, ct))
-        // {
-        //     segments.Add(segment.Text);
-        // }
-        //
-        // return new TranscriptionResult
-        // {
-        //     Text = string.Join(" ", segments).Trim(),
-        //     ProviderName = Name,
-        //     Confidence = 0.85
-        // };
+        EnsureInitialised();
 
-        await Task.CompletedTask;
+        // Convert the input audio to float32 PCM at 16kHz mono (Whisper's required format).
+        var samples = await ConvertToFloat32Pcm16kHzAsync(audioStream, ct);
+
+        if (samples.Length == 0)
+        {
+            return new TranscriptionResult
+            {
+                Text = "",
+                ProviderName = Name,
+                Confidence = 0
+            };
+        }
+
+        // Run Whisper inference.
+        var segments = new List<string>();
+        await foreach (var segment in _processor!.ProcessAsync(samples, ct))
+        {
+            segments.Add(segment.Text);
+        }
+
+        var text = string.Join(" ", segments).Trim();
+
         return new TranscriptionResult
         {
-            Text = "[Whisper.net not yet wired — install Whisper.net package]",
+            Text = text,
             ProviderName = Name,
-            Confidence = 0
+            Confidence = string.IsNullOrWhiteSpace(text) ? 0 : 0.85,
+            Duration = TimeSpan.FromSeconds(samples.Length / 16000.0)
         };
+    }
+
+    private void EnsureInitialised()
+    {
+        if (_initialised) return;
+
+        _factory = WhisperFactory.FromPath(_modelPath);
+        _processor = _factory.CreateBuilder()
+            .WithLanguage("en")
+            .WithThreads(Environment.ProcessorCount > 4 ? 4 : Environment.ProcessorCount)
+            .Build();
+        _initialised = true;
+    }
+
+    /// <summary>
+    /// Converts an audio stream (WAV/PCM) to float32 samples at 16kHz mono,
+    /// which is the format Whisper requires.
+    /// </summary>
+    private static async Task<float[]> ConvertToFloat32Pcm16kHzAsync(Stream audioStream, CancellationToken ct)
+    {
+        // Copy to a seekable MemoryStream if needed.
+        MemoryStream ms;
+        if (!audioStream.CanSeek)
+        {
+            ms = new MemoryStream();
+            await audioStream.CopyToAsync(ms, ct);
+            ms.Position = 0;
+        }
+        else
+        {
+            ms = (audioStream as MemoryStream) ?? new MemoryStream();
+            if (ms != audioStream)
+            {
+                await audioStream.CopyToAsync(ms, ct);
+                ms.Position = 0;
+            }
+        }
+
+        if (ms.Length == 0)
+            return [];
+
+        try
+        {
+            using var reader = new WaveFileReader(ms);
+            // Resample to 16kHz mono if needed.
+            var targetFormat = new WaveFormat(16000, 16, 1);
+
+            using var resampler = new MediaFoundationResampler(reader, targetFormat);
+            resampler.ResamplerQuality = 60;
+
+            var outputMs = new MemoryStream();
+            var buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = resampler.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                outputMs.Write(buffer, 0, bytesRead);
+            }
+
+            // Convert 16-bit PCM bytes to float32 samples.
+            var pcmBytes = outputMs.ToArray();
+            var sampleCount = pcmBytes.Length / 2;
+            var samples = new float[sampleCount];
+            for (var i = 0; i < sampleCount; i++)
+            {
+                var int16 = BitConverter.ToInt16(pcmBytes, i * 2);
+                samples[i] = int16 / 32768f;
+            }
+
+            return samples;
+        }
+        catch
+        {
+            // If WAV parsing fails, try to treat as raw 16-bit PCM at 16kHz.
+            ms.Position = 0;
+            var bytes = ms.ToArray();
+            var sampleCount = bytes.Length / 2;
+            if (sampleCount == 0) return [];
+
+            var samples = new float[sampleCount];
+            for (var i = 0; i < sampleCount; i++)
+            {
+                var int16 = BitConverter.ToInt16(bytes, i * 2);
+                samples[i] = int16 / 32768f;
+            }
+            return samples;
+        }
+    }
+
+    public void Dispose()
+    {
+        _processor?.Dispose();
+        _factory?.Dispose();
     }
 }

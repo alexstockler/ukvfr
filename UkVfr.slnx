@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/UkVfr.App/UkVfr.App.csproj" />
+    <Project Path="src/UkVfr.Console/UkVfr.Console.csproj" />
     <Project Path="src/UkVfr.Core/UkVfr.Core.csproj" />
   </Folder>
   <Folder Name="/tests/">
