@@ -1,0 +1,43 @@
+{
+  "icao": "EGLF",
+  "name": "Farnborough",
+  "latitude_deg": 51.2758,
+  "longitude_deg": -0.7764,
+  "elevation_ft": 238,
+  "transition_altitude_ft": 3000,
+  "frequencies": {
+    "tower": 122.500,
+    "approach": 134.350,
+    "radar": 125.250,
+    "atis": 128.400
+  },
+  "runways": [
+    {
+      "designator": "24",
+      "heading_mag": 243,
+      "length_m": 2440,
+      "circuit_direction": "left",
+      "circuit_height_qfe_ft": 1000
+    },
+    {
+      "designator": "06",
+      "heading_mag": 63,
+      "length_m": 2440,
+      "circuit_direction": "right",
+      "circuit_height_qfe_ft": 1000
+    }
+  ],
+  "atz": {
+    "type": "circle",
+    "radius_nm": 2.5,
+    "upper_limit_ft_aal": 2000
+  },
+  "unit_callsigns": {
+    "tower": "Farnborough Tower",
+    "approach": "Farnborough Approach",
+    "radar": "Farnborough Radar",
+    "radio": null
+  },
+  "services_available": ["basic", "traffic", "deconfliction"],
+  "notes": "PPR required. No circuits weekdays."
+}
