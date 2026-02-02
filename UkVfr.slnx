@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/UkVfr.App/UkVfr.App.csproj" />
+    <Project Path="src/UkVfr.Core/UkVfr.Core.csproj" />
+  </Folder>
+</Solution>
