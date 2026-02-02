@@ -16,13 +16,12 @@ namespace UkVfr.App;
 
 public partial class MainWindow : Window
 {
-    private readonly SimConnectBridge _sim;
+    private readonly ISimDataProvider _sim;
     private readonly FlightPhaseDetector _phaseDetector;
     private readonly AirspaceDatabase _airspaceDb;
     private readonly AtcEngine _atcEngine;
     private readonly PhraseologyEngine _phraseology;
     private readonly VoicePipeline _voicePipeline;
-    private readonly RadioAudioFilter _radioFilter;
     private readonly VoiceSettings _voiceSettings;
 
     private AtcUnit? _activeUnit;
@@ -41,19 +40,22 @@ public partial class MainWindow : Window
         _voiceSettings = new VoiceSettings();
         config.GetSection("Voice").Bind(_voiceSettings);
 
+        var simSettings = new SimConnectSettings();
+        config.GetSection("SimConnect").Bind(simSettings);
+
         // Initialise components.
-        _sim = new SimConnectBridge();
+        _sim = CreateSimDataProvider(simSettings);
         _phaseDetector = new FlightPhaseDetector();
         _airspaceDb = new AirspaceDatabase();
         _phraseology = new PhraseologyEngine();
         _atcEngine = new AtcEngine(_phraseology);
-        _radioFilter = new RadioAudioFilter();
 
-        // Build voice pipeline from configuration.
+        // Build voice pipeline from configuration (includes radio filter if enabled).
         var stt = ServiceFactory.CreateSttProvider(_voiceSettings);
         var tts = ServiceFactory.CreateTtsProvider(_voiceSettings);
         var intentParser = ServiceFactory.CreateIntentParser(_voiceSettings);
-        _voicePipeline = new VoicePipeline(stt, intentParser, tts, _atcEngine);
+        var radioFilter = _voiceSettings.Tts.ApplyRadioFilter ? new RadioAudioFilter() : null;
+        _voicePipeline = new VoicePipeline(stt, intentParser, tts, _atcEngine, radioFilter);
 
         // Subscribe to pipeline events.
         _voicePipeline.AtcResponded += OnAtcResponded;
@@ -63,6 +65,23 @@ public partial class MainWindow : Window
         Unloaded += OnWindowUnloaded;
 
         UpdateProviderStatus(stt, tts, intentParser);
+    }
+
+    private static ISimDataProvider CreateSimDataProvider(SimConnectSettings settings)
+    {
+        if (settings.UseSimulatedData)
+            return new SimulatedDataProvider();
+
+        try
+        {
+            var bridge = new SimConnectBridge(pollRateHz: settings.PollRateHz);
+            return bridge;
+        }
+        catch
+        {
+            // SimConnect SDK not available — fall back to simulated data.
+            return new SimulatedDataProvider();
+        }
     }
 
     private async void OnWindowLoaded(object sender, RoutedEventArgs e)
@@ -87,7 +106,7 @@ public partial class MainWindow : Window
                 Brushes.Gray);
         }
 
-        // Connect to sim.
+        // Connect to sim data provider.
         try
         {
             await _sim.ConnectAsync();
@@ -95,7 +114,8 @@ public partial class MainWindow : Window
             {
                 _sim.SnapshotUpdated += OnSnapshotUpdated;
                 _isSubscribed = true;
-                StatusText.Text = "Connected to SimConnect";
+                var providerType = _sim is SimulatedDataProvider ? "Simulated" : "SimConnect";
+                StatusText.Text = $"Connected ({providerType})";
             }
         }
         catch (Exception ex)
@@ -123,12 +143,12 @@ public partial class MainWindow : Window
             StateTextBox.Text =
                 $"Phase   : {phase}\r\n" +
                 $"Lat/Lon : {snapshot.LatitudeDegrees:F4}, {snapshot.LongitudeDegrees:F4}\r\n" +
-                $"Alt     : {snapshot.AltitudeFeet:F0} ft\r\n" +
-                $"Heading : {snapshot.HeadingDegrees:F0}\u00b0\r\n" +
-                $"GS      : {snapshot.GroundSpeedKnots:F1} kt\r\n" +
-                $"OnGround: {snapshot.OnGround}\r\n" +
+                $"Alt     : {snapshot.AltitudeFeet:F0} ft | VS: {snapshot.VerticalSpeedFpm:+0;-0} fpm\r\n" +
+                $"Heading : {snapshot.HeadingDegrees:F0}\u00b0 | GS: {snapshot.GroundSpeedKnots:F1} kt\r\n" +
                 $"COM1    : {snapshot.Com1ActiveHz / 1_000_000:F3} MHz\r\n" +
-                $"COM2    : {snapshot.Com2ActiveHz / 1_000_000:F3} MHz";
+                $"COM2    : {snapshot.Com2ActiveHz / 1_000_000:F3} MHz\r\n" +
+                $"Squawk  : {snapshot.TransponderCode:D4}\r\n" +
+                $"Wind    : {snapshot.WindDirectionDeg:000}/{snapshot.WindSpeedKt:F0}kt | QNH {snapshot.BarometerHpa:F0}";
 
             StatusText.Text = $"Connected | Phase: {phase} | ATC: {_atcEngine.State}";
         });
@@ -303,5 +323,11 @@ public partial class MainWindow : Window
             $"STT: {stt.Name} ({(stt.IsAvailable ? "ready" : "unavailable")})\n" +
             $"TTS: {tts.Name} ({(tts.IsAvailable ? "ready" : "unavailable")})\n" +
             $"Intent: {intent.Name}";
+    }
+
+    private void OnOpenSettings(object sender, RoutedEventArgs e)
+    {
+        var settings = new SettingsWindow { Owner = this };
+        settings.ShowDialog();
     }
 }

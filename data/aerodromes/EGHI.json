@@ -1,0 +1,43 @@
+{
+  "icao": "EGHI",
+  "name": "Southampton",
+  "latitude_deg": 50.9503,
+  "longitude_deg": -1.3568,
+  "elevation_ft": 44,
+  "transition_altitude_ft": 3000,
+  "frequencies": {
+    "tower": 118.205,
+    "approach": 120.225,
+    "radar": 120.225,
+    "atis": 113.350
+  },
+  "runways": [
+    {
+      "designator": "20",
+      "heading_mag": 202,
+      "length_m": 1723,
+      "circuit_direction": "left",
+      "circuit_height_qfe_ft": 1000
+    },
+    {
+      "designator": "02",
+      "heading_mag": 22,
+      "length_m": 1723,
+      "circuit_direction": "right",
+      "circuit_height_qfe_ft": 1000
+    }
+  ],
+  "atz": {
+    "type": "circle",
+    "radius_nm": 2.5,
+    "upper_limit_ft_aal": 2000
+  },
+  "unit_callsigns": {
+    "tower": "Solent Tower",
+    "approach": "Solent Approach",
+    "radar": "Solent Radar",
+    "radio": null
+  },
+  "services_available": ["basic", "traffic", "deconfliction"],
+  "notes": "Class D CTR. PPR for light aircraft."
+}

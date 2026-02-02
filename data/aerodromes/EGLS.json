@@ -1,0 +1,44 @@
+{
+  "icao": "EGLS",
+  "name": "Old Sarum",
+  "latitude_deg": 51.0994,
+  "longitude_deg": -1.7769,
+  "elevation_ft": 285,
+  "transition_altitude_ft": 3000,
+  "frequencies": {
+    "tower": null,
+    "approach": null,
+    "radar": null,
+    "atis": null,
+    "radio": 130.450
+  },
+  "runways": [
+    {
+      "designator": "24",
+      "heading_mag": 243,
+      "length_m": 660,
+      "circuit_direction": "left",
+      "circuit_height_qfe_ft": 800
+    },
+    {
+      "designator": "06",
+      "heading_mag": 63,
+      "length_m": 660,
+      "circuit_direction": "right",
+      "circuit_height_qfe_ft": 800
+    }
+  ],
+  "atz": {
+    "type": "circle",
+    "radius_nm": 2.0,
+    "upper_limit_ft_aal": 2000
+  },
+  "unit_callsigns": {
+    "tower": null,
+    "approach": null,
+    "radar": null,
+    "radio": "Old Sarum Radio"
+  },
+  "services_available": ["basic"],
+  "notes": "Grass strip. Air/Ground only. Near Boscombe Down MATZ."
+}

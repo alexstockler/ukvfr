@@ -195,21 +195,21 @@ var detector = new FlightPhaseDetector();
 (string Label, SimSnapshot Snap)[] flightStages =
 [
     ("Parked at stand",
-        new SimSnapshot(51.2758, -0.7764, 238, 243, 0, true, 122_500_000, 118_000_000)),
+        new SimSnapshot(51.2758, -0.7764, 238, 243, 0, OnGround: true)),
     ("Taxiing to runway",
-        new SimSnapshot(51.2760, -0.7760, 238, 243, 12, true, 122_500_000, 118_000_000)),
+        new SimSnapshot(51.2760, -0.7760, 238, 243, 12, OnGround: true)),
     ("Airborne after takeoff",
-        new SimSnapshot(51.2780, -0.7740, 400, 243, 75, false, 122_500_000, 118_000_000)),
+        new SimSnapshot(51.2780, -0.7740, 400, 243, 75, VerticalSpeedFpm: 800)),
     ("Climbing through 800ft",
-        new SimSnapshot(51.2800, -0.7720, 800, 243, 85, false, 122_500_000, 118_000_000)),
+        new SimSnapshot(51.2800, -0.7720, 800, 243, 85, VerticalSpeedFpm: 600)),
     ("Level at circuit height",
-        new SimSnapshot(51.2820, -0.7700, 1238, 153, 90, false, 122_500_000, 118_000_000)),
+        new SimSnapshot(51.2820, -0.7700, 1238, 153, 90)),
     ("Descending on final",
-        new SimSnapshot(51.2770, -0.7764, 600, 243, 70, false, 122_500_000, 118_000_000)),
+        new SimSnapshot(51.2770, -0.7764, 600, 243, 70, VerticalSpeedFpm: -500)),
     ("Landed on runway",
-        new SimSnapshot(51.2758, -0.7764, 238, 243, 40, true, 122_500_000, 118_000_000)),
+        new SimSnapshot(51.2758, -0.7764, 238, 243, 40, OnGround: true)),
     ("Vacated and parked",
-        new SimSnapshot(51.2756, -0.7768, 238, 180, 0, true, 122_500_000, 118_000_000)),
+        new SimSnapshot(51.2756, -0.7768, 238, 180, 0, OnGround: true)),
 ];
 
 foreach (var (label, snap) in flightStages)

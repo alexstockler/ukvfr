@@ -1,0 +1,44 @@
+{
+  "icao": "EGLK",
+  "name": "Blackbushe",
+  "latitude_deg": 51.3239,
+  "longitude_deg": -0.8475,
+  "elevation_ft": 325,
+  "transition_altitude_ft": 3000,
+  "frequencies": {
+    "tower": null,
+    "approach": null,
+    "radar": null,
+    "atis": null,
+    "radio": 122.300
+  },
+  "runways": [
+    {
+      "designator": "25",
+      "heading_mag": 252,
+      "length_m": 1073,
+      "circuit_direction": "left",
+      "circuit_height_qfe_ft": 800
+    },
+    {
+      "designator": "07",
+      "heading_mag": 72,
+      "length_m": 1073,
+      "circuit_direction": "right",
+      "circuit_height_qfe_ft": 800
+    }
+  ],
+  "atz": {
+    "type": "circle",
+    "radius_nm": 2.0,
+    "upper_limit_ft_aal": 2000
+  },
+  "unit_callsigns": {
+    "tower": null,
+    "approach": null,
+    "radar": null,
+    "radio": "Blackbushe Radio"
+  },
+  "services_available": ["basic"],
+  "notes": "Air/Ground radio only. No ATC. Self-positioning circuit. Near Farnborough ATZ."
+}

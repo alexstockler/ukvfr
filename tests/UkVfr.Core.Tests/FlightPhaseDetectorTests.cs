@@ -16,9 +16,7 @@ public class FlightPhaseDetectorTests
         AltitudeFeet: altFt,
         HeadingDegrees: heading,
         GroundSpeedKnots: groundSpeedKt,
-        OnGround: onGround,
-        Com1ActiveHz: 122_500_000,
-        Com2ActiveHz: 118_000_000);
+        OnGround: onGround);
 
     [Fact]
     public void InitialState_IsParked()

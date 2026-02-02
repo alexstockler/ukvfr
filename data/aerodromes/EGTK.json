@@ -1,0 +1,57 @@
+{
+  "icao": "EGTK",
+  "name": "Oxford / Kidlington",
+  "latitude_deg": 51.8369,
+  "longitude_deg": -1.3200,
+  "elevation_ft": 270,
+  "transition_altitude_ft": 3000,
+  "frequencies": {
+    "tower": 133.425,
+    "approach": 125.325,
+    "radar": null,
+    "atis": 136.225
+  },
+  "runways": [
+    {
+      "designator": "19",
+      "heading_mag": 193,
+      "length_m": 1552,
+      "circuit_direction": "left",
+      "circuit_height_qfe_ft": 1000
+    },
+    {
+      "designator": "01",
+      "heading_mag": 13,
+      "length_m": 1552,
+      "circuit_direction": "right",
+      "circuit_height_qfe_ft": 1000
+    },
+    {
+      "designator": "29",
+      "heading_mag": 291,
+      "length_m": 747,
+      "circuit_direction": "left",
+      "circuit_height_qfe_ft": 1000
+    },
+    {
+      "designator": "11",
+      "heading_mag": 111,
+      "length_m": 747,
+      "circuit_direction": "right",
+      "circuit_height_qfe_ft": 1000
+    }
+  ],
+  "atz": {
+    "type": "circle",
+    "radius_nm": 2.0,
+    "upper_limit_ft_aal": 2000
+  },
+  "unit_callsigns": {
+    "tower": "Oxford Tower",
+    "approach": "Oxford Approach",
+    "radar": null,
+    "radio": null
+  },
+  "services_available": ["basic", "traffic"],
+  "notes": "Training aerodrome. Busy circuit. Two runways."
+}

@@ -84,9 +84,20 @@
 
                 <!-- Status bar -->
                 <Border Grid.Row="2" Background="#313244" CornerRadius="4" Padding="8,4" Margin="0,8,0,0">
-                    <TextBlock x:Name="StatusText"
-                               Foreground="#6C7086" FontSize="11"
-                               Text="Disconnected — waiting for SimConnect" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" x:Name="StatusText"
+                                   Foreground="#6C7086" FontSize="11"
+                                   Text="Disconnected — waiting for SimConnect"
+                                   VerticalAlignment="Center" />
+                        <Button Grid.Column="1" Content="Settings"
+                                Click="OnOpenSettings" FontSize="10"
+                                Background="#45475A" Foreground="#CDD6F4"
+                                BorderThickness="0" Padding="8,3" Cursor="Hand" />
+                    </Grid>
                 </Border>
             </Grid>
         </Border>
