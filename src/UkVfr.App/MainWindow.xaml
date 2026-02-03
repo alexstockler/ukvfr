@@ -20,29 +20,45 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
+                <!-- Aerodrome selector -->
+                <StackPanel Grid.Row="0" Margin="0,0,0,6">
+                    <TextBlock Text="Aerodrome" Foreground="#CDD6F4" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,3" />
+                    <ComboBox x:Name="CmbAerodrome" SelectionChanged="OnAerodromeChanged"
+                              Background="#313244" Foreground="#CDD6F4" BorderBrush="#45475A"
+                              FontSize="12" Padding="6,4" />
+                </StackPanel>
+
+                <!-- Active unit display -->
+                <Border Grid.Row="1" Background="#313244" CornerRadius="4" Padding="6,4" Margin="0,0,0,6">
+                    <TextBlock x:Name="ActiveUnitText" Foreground="#A6E3A1" FontSize="11"
+                               TextWrapping="Wrap" Text="No unit selected" />
+                </Border>
+
                 <!-- Sim status -->
-                <TextBlock Grid.Row="0" Text="Aircraft State"
-                           Foreground="#CDD6F4" FontSize="14" FontWeight="SemiBold"
-                           Margin="0,0,0,8" />
-                <TextBox x:Name="StateTextBox" Grid.Row="1"
-                         FontFamily="Consolas" FontSize="11"
+                <TextBlock Grid.Row="2" Text="Aircraft State"
+                           Foreground="#CDD6F4" FontSize="13" FontWeight="SemiBold"
+                           Margin="0,0,0,3" />
+                <TextBox x:Name="StateTextBox" Grid.Row="3"
+                         FontFamily="Consolas" FontSize="10"
                          Foreground="#A6ADC8" Background="Transparent"
                          BorderThickness="0" IsReadOnly="True"
-                         TextWrapping="Wrap" Height="140" />
+                         TextWrapping="Wrap" Height="150" />
 
                 <!-- Provider status -->
-                <TextBlock Grid.Row="2" x:Name="ProviderStatusText"
+                <TextBlock Grid.Row="4" x:Name="ProviderStatusText"
                            Foreground="#6C7086" FontSize="10"
-                           TextWrapping="Wrap" Margin="0,8,0,8" />
+                           TextWrapping="Wrap" Margin="0,2,0,4" />
 
                 <!-- Pilot menu (fallback input) -->
-                <Border Grid.Row="3" Background="#313244" CornerRadius="6" Padding="8" Margin="0,4,0,0">
+                <Border Grid.Row="5" Background="#313244" CornerRadius="6" Padding="8" Margin="0,2,0,0">
                     <StackPanel>
                         <TextBlock Text="Pilot Menu" Foreground="#CDD6F4"
-                                   FontSize="13" FontWeight="SemiBold" Margin="0,0,0,8" />
+                                   FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6" />
                         <Button x:Name="BtnInitialCall" Content="Initial Call"
                                 Click="OnMenuInitialCall" Style="{StaticResource MenuBtn}" />
                         <Button x:Name="BtnPassMessage" Content="Pass Message"
@@ -59,6 +75,8 @@
                                 Click="OnMenuRoger" Style="{StaticResource MenuBtn}" />
                         <Button x:Name="BtnFreqChange" Content="Request Freq Change"
                                 Click="OnMenuFreqChange" Style="{StaticResource MenuBtn}" />
+                        <Button x:Name="BtnAtis" Content="Request ATIS"
+                                Click="OnMenuAtis" Style="{StaticResource MenuBtn}" />
                     </StackPanel>
                 </Border>
             </Grid>
