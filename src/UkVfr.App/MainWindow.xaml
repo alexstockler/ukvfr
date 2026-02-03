@@ -120,6 +120,7 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Text="ATC Transcript"
@@ -131,8 +132,37 @@
                          ScrollViewer.VerticalScrollBarVisibility="Auto"
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
 
+                <!-- Free-text pilot input -->
+                <Border Grid.Row="2" Background="#313244" CornerRadius="4" Padding="8" Margin="0,8,0,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="Type your transmission (or use menu buttons):"
+                                   Foreground="#6C7086" FontSize="10" Margin="0,0,0,4" />
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtPilotInput" Grid.Column="0"
+                                     Background="#1E1E2E" Foreground="#CDD6F4"
+                                     BorderBrush="#45475A" BorderThickness="1"
+                                     FontFamily="Consolas" FontSize="12"
+                                     Padding="8,6" VerticalContentAlignment="Center"
+                                     KeyDown="OnPilotInputKeyDown"
+                                     Text="Golf Alpha Bravo Charlie Delta, Denham Radio" />
+                            <Button Grid.Column="1" Content="Transmit" Click="OnTransmitClick"
+                                    Background="#A6E3A1" Foreground="#1E1E2E"
+                                    FontWeight="SemiBold" BorderThickness="0"
+                                    Padding="12,6" Margin="6,0,0,0" Cursor="Hand" />
+                        </Grid>
+                    </Grid>
+                </Border>
+
                 <!-- Status bar -->
-                <Border Grid.Row="2" Background="#313244" CornerRadius="4" Padding="8,4" Margin="0,8,0,0">
+                <Border Grid.Row="3" Background="#313244" CornerRadius="4" Padding="8,4" Margin="0,8,0,0">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />

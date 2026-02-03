@@ -1,7 +1,9 @@
 using System.IO;
+using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Input;
 using System.Windows.Media;
 using Microsoft.Extensions.Configuration;
 using UkVfr.Core.Airspace;
@@ -25,12 +27,15 @@ public partial class MainWindow : Window
     private readonly AtisGenerator _atisGenerator;
     private readonly VoicePipeline _voicePipeline;
     private readonly VoiceSettings _voiceSettings;
+    private readonly LlmAtcResponder _llmResponder;
+    private readonly List<(string Speaker, string Text)> _conversationHistory = [];
 
     private AtcUnit? _activeUnit;
     private Aerodrome? _activeAerodrome;
     private WeatherData _latestWeather = new();
     private bool _isSubscribed;
     private bool _populatingAerodromes;
+    private bool _isProcessing;
 
     private static readonly Brush PilotBrush = new SolidColorBrush(Color.FromRgb(0x89, 0xB4, 0xFA));
     private static readonly Brush AtcBrush = new SolidColorBrush(Color.FromRgb(0xA6, 0xE3, 0xA1));
@@ -69,6 +74,10 @@ public partial class MainWindow : Window
         var radioFilter = _voiceSettings.Tts.ApplyRadioFilter ? new RadioAudioFilter() : null;
         _voicePipeline = new VoicePipeline(stt, intentParser, tts, _atcEngine, radioFilter);
 
+        // Create LLM-powered ATC responder for dynamic responses.
+        var llmApiKey = _voiceSettings.IntentParser.OpenAiApiKey;
+        _llmResponder = new LlmAtcResponder(new HttpClient(), llmApiKey, _atcEngine);
+
         // Subscribe to pipeline events.
         _voicePipeline.AtcResponded += OnAtcResponded;
         _voicePipeline.PilotTranscribed += OnPilotTranscribed;
@@ -76,7 +85,7 @@ public partial class MainWindow : Window
         Loaded += OnWindowLoaded;
         Unloaded += OnWindowUnloaded;
 
-        UpdateProviderStatus(stt, tts, intentParser);
+        UpdateProviderStatus(stt, tts, intentParser, _llmResponder);
     }
 
     private static ISimDataProvider CreateSimDataProvider(SimConnectSettings settings)
@@ -199,6 +208,7 @@ public partial class MainWindow : Window
         // Reset ATC state for new aerodrome.
         _atcEngine.Reset();
         _phaseDetector.Reset();
+        _conversationHistory.Clear();
 
         // Update UI.
         var rwy = aerodrome.ActiveRunway;
@@ -429,17 +439,86 @@ public partial class MainWindow : Window
         TranscriptList.ScrollIntoView(item);
     }
 
-    private void UpdateProviderStatus(ISttProvider stt, ITtsProvider tts, IIntentParser intent)
+    private void UpdateProviderStatus(ISttProvider stt, ITtsProvider tts, IIntentParser intent, LlmAtcResponder llm)
     {
+        var llmStatus = llm.IsAvailable ? "AI responses enabled" : "rule-based fallback";
         ProviderStatusText.Text =
             $"STT: {stt.Name} ({(stt.IsAvailable ? "ready" : "unavailable")})\n" +
             $"TTS: {tts.Name} ({(tts.IsAvailable ? "ready" : "unavailable")})\n" +
-            $"Intent: {intent.Name}";
+            $"ATC: {llmStatus}";
     }
 
     private void OnOpenSettings(object sender, RoutedEventArgs e)
     {
         var settings = new SettingsWindow { Owner = this };
         settings.ShowDialog();
+    }
+
+    // ── Free-text pilot input ─────────────────────────
+
+    private void OnPilotInputKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            e.Handled = true;
+            _ = TransmitAsync();
+        }
+    }
+
+    private void OnTransmitClick(object sender, RoutedEventArgs e)
+    {
+        _ = TransmitAsync();
+    }
+
+    private async Task TransmitAsync()
+    {
+        if (_isProcessing || _activeUnit is null) return;
+
+        var text = TxtPilotInput.Text.Trim();
+        if (string.IsNullOrEmpty(text)) return;
+
+        _isProcessing = true;
+        TxtPilotInput.IsEnabled = false;
+
+        try
+        {
+            // Show pilot transmission in transcript.
+            AddTranscriptEntry("PILOT", text, PilotBrush);
+            _conversationHistory.Add(("PILOT", text));
+
+            // Get ATC response (AI-powered or fallback).
+            var response = await _llmResponder.RespondAsync(text, _activeUnit, _conversationHistory);
+
+            if (!string.IsNullOrWhiteSpace(response.Text))
+            {
+                AddTranscriptEntry("ATC", response.Text, AtcBrush);
+                _conversationHistory.Add(("ATC", response.Text));
+
+                // Update pilot callsign if detected.
+                if (_atcEngine.PilotCallsign is not null)
+                    UpdatePilotCallsignInInput();
+            }
+
+            // Clear input for next transmission.
+            TxtPilotInput.Clear();
+        }
+        finally
+        {
+            _isProcessing = false;
+            TxtPilotInput.IsEnabled = true;
+            TxtPilotInput.Focus();
+        }
+    }
+
+    private void UpdatePilotCallsignInInput()
+    {
+        // After initial call, suggest shortened callsign for subsequent transmissions.
+        var callsign = _atcEngine.PilotCallsign;
+        if (callsign is not null && callsign.Split(' ').Length > 3)
+        {
+            var parts = callsign.Split(' ');
+            var shortened = string.Join(" ", parts.TakeLast(3));
+            TxtPilotInput.Text = shortened + ", ";
+        }
     }
 }
