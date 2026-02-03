@@ -23,7 +23,11 @@ public sealed class SimConnectBridge : ISimDataProvider
     private bool _isConnected;
     private bool _disposed;
 
+    // Event is declared for interface compliance; actual data callbacks
+    // will be wired when full SimConnect event handling is implemented.
+#pragma warning disable CS0067
     public event EventHandler<SimSnapshot>? SnapshotUpdated;
+#pragma warning restore CS0067
     public event EventHandler<bool>? ConnectionChanged;
 
     public bool IsConnected => _isConnected;
