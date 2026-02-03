@@ -31,8 +31,8 @@ public static class ServiceFactory
             "openai" when !string.IsNullOrEmpty(settings.Tts.OpenAiApiKey)
                 => new OpenAiTtsProvider(new HttpClient(), settings.Tts.OpenAiApiKey),
 
-            // Fall through to try ElevenLabs, then OpenAI, then System.Speech.
-            _ => TryCreateCloudTts(settings) ?? new SystemSpeechTtsProvider()
+            // Fall through to try ElevenLabs, then OpenAI, then System.Speech (Windows only).
+            _ => TryCreateCloudTts(settings) ?? CreateFallbackTts()
         };
     }
 
@@ -89,5 +89,14 @@ public static class ServiceFactory
             return new OpenAiTtsProvider(new HttpClient(), settings.Tts.OpenAiApiKey);
 
         return null;
+    }
+
+    private static ITtsProvider CreateFallbackTts()
+    {
+        if (OperatingSystem.IsWindows())
+            return new SystemSpeechTtsProvider();
+
+        throw new PlatformNotSupportedException(
+            "No TTS provider available. Configure ElevenLabs or OpenAI API keys, or run on Windows for System.Speech fallback.");
     }
 }
