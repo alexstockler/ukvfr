@@ -75,7 +75,9 @@ public partial class MainWindow : Window
         _voicePipeline = new VoicePipeline(stt, intentParser, tts, _atcEngine, radioFilter);
 
         // Create LLM-powered ATC responder for dynamic responses.
-        var llmApiKey = _voiceSettings.IntentParser.OpenAiApiKey;
+        // Check env var first, then user settings file, then appsettings.json
+        var llmApiKey = SettingsWindow.GetApiKey("OPENAI_API_KEY", "IntentOpenAiApiKey")
+                        ?? _voiceSettings.IntentParser.OpenAiApiKey;
         _llmResponder = new LlmAtcResponder(new HttpClient(), llmApiKey, _atcEngine);
 
         // Subscribe to pipeline events.
