@@ -59,8 +59,9 @@ public static class ServiceFactory
         var intentParser = CreateIntentParser(settings);
         var phraseology = new PhraseologyEngine();
         var atcEngine = new AtcEngine(phraseology);
+        var radioFilter = settings.Tts.ApplyRadioFilter ? new RadioAudioFilter() : null;
 
-        return new VoicePipeline(stt, intentParser, tts, atcEngine);
+        return new VoicePipeline(stt, intentParser, tts, atcEngine, radioFilter);
     }
 
     private static ElevenLabsTtsProvider CreateElevenLabs(VoiceSettings settings)

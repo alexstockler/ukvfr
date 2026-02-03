@@ -12,6 +12,7 @@ public sealed class VoicePipeline
     private readonly IIntentParser _intentParser;
     private readonly ITtsProvider _ttsProvider;
     private readonly AtcEngine _atcEngine;
+    private readonly RadioAudioFilter? _radioFilter;
 
     private readonly List<string> _recentTranscripts = [];
 
@@ -19,12 +20,14 @@ public sealed class VoicePipeline
         ISttProvider sttProvider,
         IIntentParser intentParser,
         ITtsProvider ttsProvider,
-        AtcEngine atcEngine)
+        AtcEngine atcEngine,
+        RadioAudioFilter? radioFilter = null)
     {
         _sttProvider = sttProvider;
         _intentParser = intentParser;
         _ttsProvider = ttsProvider;
         _atcEngine = atcEngine;
+        _radioFilter = radioFilter;
     }
 
     /// <summary>
@@ -80,10 +83,10 @@ public sealed class VoicePipeline
         // Step 4: TTS synthesis
         var audio = await _ttsProvider.SynthesiseAsync(response.Text, response.Voice, ct);
 
-        // Step 5: Radio filter would be applied here (NAudio band-pass)
-        // TODO: Pipe through RadioAudioFilter before playback.
+        // Step 5: Apply radio band-pass filter for VHF radio effect.
+        var output = _radioFilter is not null ? _radioFilter.Apply(audio) : audio;
 
-        AudioReady?.Invoke(this, audio);
+        AudioReady?.Invoke(this, output);
     }
 
     /// <summary>
@@ -98,6 +101,9 @@ public sealed class VoicePipeline
             return;
 
         var audio = await _ttsProvider.SynthesiseAsync(response.Text, response.Voice, ct);
-        AudioReady?.Invoke(this, audio);
+
+        var output = _radioFilter is not null ? _radioFilter.Apply(audio) : audio;
+
+        AudioReady?.Invoke(this, output);
     }
 }

@@ -1,0 +1,57 @@
+{
+  "icao": "EGBJ",
+  "name": "Gloucestershire / Staverton",
+  "latitude_deg": 51.8942,
+  "longitude_deg": -2.1672,
+  "elevation_ft": 101,
+  "transition_altitude_ft": 3000,
+  "frequencies": {
+    "tower": 122.900,
+    "approach": 128.550,
+    "radar": null,
+    "atis": 127.475
+  },
+  "runways": [
+    {
+      "designator": "27",
+      "heading_mag": 271,
+      "length_m": 1469,
+      "circuit_direction": "left",
+      "circuit_height_qfe_ft": 1000
+    },
+    {
+      "designator": "09",
+      "heading_mag": 91,
+      "length_m": 1469,
+      "circuit_direction": "right",
+      "circuit_height_qfe_ft": 1000
+    },
+    {
+      "designator": "22",
+      "heading_mag": 222,
+      "length_m": 914,
+      "circuit_direction": "left",
+      "circuit_height_qfe_ft": 1000
+    },
+    {
+      "designator": "04",
+      "heading_mag": 42,
+      "length_m": 914,
+      "circuit_direction": "right",
+      "circuit_height_qfe_ft": 1000
+    }
+  ],
+  "atz": {
+    "type": "circle",
+    "radius_nm": 2.5,
+    "upper_limit_ft_aal": 2000
+  },
+  "unit_callsigns": {
+    "tower": "Gloucester Tower",
+    "approach": "Gloucester Approach",
+    "radar": null,
+    "radio": null
+  },
+  "services_available": ["basic", "traffic"],
+  "notes": "Busy GA aerodrome. Multiple flying schools. Two crossing runways."
+}

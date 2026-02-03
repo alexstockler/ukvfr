@@ -1,0 +1,44 @@
+{
+  "icao": "EGLD",
+  "name": "Denham",
+  "latitude_deg": 51.5953,
+  "longitude_deg": -0.5117,
+  "elevation_ft": 240,
+  "transition_altitude_ft": 3000,
+  "frequencies": {
+    "tower": null,
+    "approach": null,
+    "radar": null,
+    "atis": null,
+    "radio": 130.725
+  },
+  "runways": [
+    {
+      "designator": "24",
+      "heading_mag": 243,
+      "length_m": 732,
+      "circuit_direction": "right",
+      "circuit_height_qfe_ft": 800
+    },
+    {
+      "designator": "06",
+      "heading_mag": 63,
+      "length_m": 732,
+      "circuit_direction": "left",
+      "circuit_height_qfe_ft": 800
+    }
+  ],
+  "atz": {
+    "type": "circle",
+    "radius_nm": 2.0,
+    "upper_limit_ft_aal": 2000
+  },
+  "unit_callsigns": {
+    "tower": null,
+    "approach": null,
+    "radar": null,
+    "radio": "Denham Radio"
+  },
+  "services_available": ["basic"],
+  "notes": "Air/Ground radio only. Right-hand circuit RWY 24. Near Heathrow CTR — do not infringe. Noise-sensitive."
+}
