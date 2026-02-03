@@ -1,6 +1,7 @@
 #if WINDOWS
 using System.Speech.Synthesis;
 #endif
+using System.Runtime.Versioning;
 
 namespace UkVfr.Core.Voice.Providers;
 
@@ -8,6 +9,7 @@ namespace UkVfr.Core.Voice.Providers;
 /// Offline TTS fallback using System.Speech.Synthesis (Windows only).
 /// Robotic but functional when no cloud API keys are configured.
 /// </summary>
+[SupportedOSPlatform("windows")]
 public sealed class SystemSpeechTtsProvider : ITtsProvider
 {
     public bool IsAvailable =>

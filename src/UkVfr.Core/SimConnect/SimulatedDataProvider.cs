@@ -16,7 +16,7 @@ public sealed class SimulatedDataProvider : ISimDataProvider
     private double _heading = 243;   // Runway 24 heading
     private double _gsKnots = 90;
     private double _vsFpm = 0;
-    private bool _onGround;
+    private bool _onGround = true;  // Start on ground
 
     public event EventHandler<SimSnapshot>? SnapshotUpdated;
     public event EventHandler<bool>? ConnectionChanged;
