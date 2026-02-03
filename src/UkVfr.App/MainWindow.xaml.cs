@@ -8,6 +8,7 @@ using System.Windows.Media;
 using Microsoft.Extensions.Configuration;
 using UkVfr.Core.Airspace;
 using UkVfr.Core.Atc;
+using UkVfr.Core.Audio;
 using UkVfr.Core.Configuration;
 using UkVfr.Core.Phraseology;
 using UkVfr.Core.SimConnect;
@@ -28,6 +29,7 @@ public partial class MainWindow : Window
     private readonly VoicePipeline _voicePipeline;
     private readonly VoiceSettings _voiceSettings;
     private readonly LlmAtcResponder _llmResponder;
+    private readonly AudioService _audioService;
     private readonly List<(string Speaker, string Text)> _conversationHistory = [];
 
     private AtcUnit? _activeUnit;
@@ -79,6 +81,10 @@ public partial class MainWindow : Window
         var llmApiKey = SettingsWindow.GetApiKey("OPENAI_API_KEY", "IntentOpenAiApiKey")
                         ?? _voiceSettings.IntentParser.OpenAiApiKey;
         _llmResponder = new LlmAtcResponder(new HttpClient(), llmApiKey, _atcEngine);
+
+        // Audio service for PTT and playback.
+        _audioService = new AudioService();
+        _audioService.PlaybackComplete += (_, _) => Dispatcher.Invoke(() => StatusText.Text = "Ready");
 
         // Subscribe to pipeline events.
         _voicePipeline.AtcResponded += OnAtcResponded;
@@ -142,6 +148,7 @@ public partial class MainWindow : Window
             _isSubscribed = false;
         }
         _sim.Dispose();
+        _audioService.Dispose();
     }
 
     // ── Aerodrome selector ─────────────────────────────
@@ -522,5 +529,87 @@ public partial class MainWindow : Window
             var shortened = string.Join(" ", parts.TakeLast(3));
             TxtPilotInput.Text = shortened + ", ";
         }
+    }
+
+    // ── Push-to-Talk ──────────────────────────────────
+
+    private void OnPttDown(object sender, MouseButtonEventArgs e)
+    {
+        if (_isProcessing || _activeUnit is null) return;
+
+        BtnPtt.Content = "🔴 Recording...";
+        BtnPtt.Background = new SolidColorBrush(Color.FromRgb(0xF3, 0x8B, 0xA8));
+        StatusText.Text = "Recording... Release to transmit";
+
+        _audioService.StartRecording();
+        e.Handled = true;
+    }
+
+    private async void OnPttUp(object sender, MouseButtonEventArgs e)
+    {
+        if (!_audioService.IsRecording || _activeUnit is null) return;
+
+        BtnPtt.Content = "🎤 Hold to Transmit (PTT)";
+        BtnPtt.Background = new SolidColorBrush(Color.FromRgb(0xF3, 0x8B, 0xA8));
+        StatusText.Text = "Processing speech...";
+
+        var audioData = _audioService.StopRecording();
+
+        if (audioData.Length < 1000)
+        {
+            StatusText.Text = "Recording too short - hold button longer";
+            return;
+        }
+
+        _isProcessing = true;
+
+        try
+        {
+            // Send audio to STT pipeline
+            using var audioStream = new MemoryStream(audioData);
+            var transcript = await _voicePipeline.TranscribeAsync(audioStream);
+
+            if (string.IsNullOrWhiteSpace(transcript))
+            {
+                StatusText.Text = "Could not understand speech - try again";
+                return;
+            }
+
+            // Show pilot transmission in transcript
+            AddTranscriptEntry("PILOT (voice)", transcript, PilotBrush);
+            _conversationHistory.Add(("PILOT", transcript));
+
+            // Get ATC response
+            StatusText.Text = "Generating ATC response...";
+            var response = await _llmResponder.RespondAsync(transcript, _activeUnit, _conversationHistory);
+
+            if (!string.IsNullOrWhiteSpace(response.Text))
+            {
+                AddTranscriptEntry("ATC", response.Text, AtcBrush);
+                _conversationHistory.Add(("ATC", response.Text));
+
+                // Synthesise and play ATC response
+                StatusText.Text = "ATC speaking...";
+                var tts = ServiceFactory.CreateTtsProvider(_voiceSettings);
+                if (tts.IsAvailable)
+                {
+                    var voiceProfile = response.Voice ?? VoiceProfile.Tower;
+                    using var ttsStream = await tts.SynthesiseAsync(response.Text, voiceProfile);
+                    using var ms = new MemoryStream();
+                    await ttsStream.CopyToAsync(ms);
+                    _audioService.PlayAudio(ms.ToArray());
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+
+        e.Handled = true;
     }
 }

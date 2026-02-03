@@ -138,8 +138,9 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <TextBlock Grid.Row="0" Text="Type your transmission (or use menu buttons):"
+                        <TextBlock Grid.Row="0" Text="Type your transmission (or hold PTT to speak):"
                                    Foreground="#6C7086" FontSize="10" Margin="0,0,0,4" />
                         <Grid Grid.Row="1">
                             <Grid.ColumnDefinitions>
@@ -158,6 +159,13 @@
                                     FontWeight="SemiBold" BorderThickness="0"
                                     Padding="12,6" Margin="6,0,0,0" Cursor="Hand" />
                         </Grid>
+                        <!-- Push-to-Talk button -->
+                        <Button x:Name="BtnPtt" Grid.Row="2" Content="🎤 Hold to Transmit (PTT)"
+                                PreviewMouseLeftButtonDown="OnPttDown" PreviewMouseLeftButtonUp="OnPttUp"
+                                Background="#F38BA8" Foreground="#1E1E2E"
+                                FontWeight="SemiBold" BorderThickness="0"
+                                Padding="12,10" Margin="0,8,0,0" Cursor="Hand"
+                                ToolTip="Hold this button and speak into your microphone" />
                     </Grid>
                 </Border>
 

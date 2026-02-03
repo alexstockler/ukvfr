@@ -90,6 +90,15 @@ public sealed class VoicePipeline
     }
 
     /// <summary>
+    /// Transcribe audio to text using the STT provider.
+    /// </summary>
+    public async Task<string> TranscribeAsync(Stream audioStream, CancellationToken ct = default)
+    {
+        var result = await _sttProvider.TranscribeAsync(audioStream, ct);
+        return result.Text;
+    }
+
+    /// <summary>
     /// Process a pilot intent directly (from menu selection, bypassing STT).
     /// </summary>
     public async Task ProcessMenuInputAsync(PilotIntent intent, AtcUnit unit, CancellationToken ct = default)
